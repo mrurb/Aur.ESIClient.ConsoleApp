@@ -1,6 +1,8 @@
 ﻿using Aur.ESIClient.ConsoleApp.Core;
 
 using ESI.NET;
+using ESI.NET.Enumerations;
+using ESI.NET.Models.SSO;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,6 +11,7 @@ using Microsoft.Extensions.Options;
 
 using System;
 using System.Net;
+using System.Web;
 
 namespace Aur.ESIClient.ConsoleApp;
 
@@ -18,38 +21,32 @@ public class Program
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
-        IHostEnvironment env = builder.Environment;
-
         Startup(builder.Services, builder.Configuration);
 
         using IHost host = builder.Build();
 
         using var scope = host.Services.CreateScope();
-        IEsiClient esiClient = scope.ServiceProvider.GetService<IEsiClient>() ?? throw new InvalidOperationException();
+        IEVEUser eVEData = scope.ServiceProvider.GetRequiredService<IEVEUser>();
 
-        Guid state = Guid.NewGuid();
+        bool done = false;
+        while (!done)
+        {
+            Console.WriteLine("Type add or done");
+            string? v = Console.ReadLine() ?? throw new InvalidOperationException();
 
-        string url = esiClient.SSO.CreateAuthenticationUrl(state: state.ToString());
-        Console.WriteLine(url);
-
-        HttpListener listener = new HttpListener() { };
-
-        listener.Prefixes.Add("http://localhost:8080/callback/");
-
-        listener.Start();
-        Console.WriteLine("Listening...");
-        HttpListenerContext context = listener.GetContext();
-        HttpListenerRequest request = context.Request;
-        // Obtain a response object.
-        HttpListenerResponse response = context.Response;
- 
-
-        
-        
-
-
-        
-        Console.ReadLine();
+            switch (v)
+            {
+                
+                case "add":
+                    await eVEData.AddCharAsync();
+                    break;
+                case "done":
+                    done = true;
+                    break;
+                default:
+                    break;
+            }
+        }
 
         await host.RunAsync();
     }
@@ -58,7 +55,9 @@ public class Program
     {
         var options = configuration.GetSection("ESIConfig");
         services.AddEsi(options);
-
+        services.AddSingleton<IEVEDataRepo, EVEDataRepo>();
+        services.AddScoped<IEVELocation, EVELocation>();
+        services.AddScoped<IEVEUser, EVEUser>();
         services.AddHostedService<Worker>();
     }
 }

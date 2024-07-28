@@ -362,4 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Aur.ESIClient.Console/appsettings.json
-/Aur.ESIClient.Console/appsettings.development.json
+/Aur.ESIClient.Console/appsettings.*.json
+!/Aur.ESIClient.Console/appsettings.example.json
